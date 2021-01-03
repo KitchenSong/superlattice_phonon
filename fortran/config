@@ -1,0 +1,50 @@
+&configlist
+ k_trans_mesh(:)=10 10 1
+ filename_input_uc="input.fdf" ! "input_gd.fdf"
+ filename_input = "input_uc.fdf" ! "input_gd.fdf"
+ filename_sandwich = "sandwich.bin"
+ filename_left_lead = "left_fc.bin"
+ filename_right_lead = "right_fc.bin"
+ left_primitive_cell_input="pc1.fdf"
+ right_primitive_cell_input="pc2.fdf"
+ n_fc_uc_x = 1 
+ n_fc_uc_y = 1
+ n_fc_uc_z = 1
+ nz = 8
+ nthick = 16
+ r_cutoff =  4.0d0 
+ ne = 50 ! 1100
+ emin = 0.01
+ emax = 17
+&end
+&setup
+ period_left = 4
+ period_right = 4
+ buffer_left = 4
+ buffer_right = 4
+ mass_only = 0
+ mass_ratio = 1.0d0
+&
+&end
+&convergelist
+ convergence = 1.0d-12 ! 1.0d-7
+ eta = 1.0d-7 !2.0d-5 !1.0d-6
+ eta0 = 1.0d-7
+ lambda_eta = 1e-5
+&end
+&unfolding
+ n_bloch_x = 1
+ n_bloch_y = 1
+ circular_flag = 0
+&end
+&kpath
+ path_mode = 5
+ kpath_file = "kgrid_3d.dat" ! "kpoint.dat_LXKnew"! "kpoint.dat_2dpmm" !"kgrid_2d.dat"
+ side = 'l'
+ az1 = 5.52796263
+ crystal = 1
+&end
+&saving
+ output_dir = 'debug'
+ verbosity = 0
+&end
