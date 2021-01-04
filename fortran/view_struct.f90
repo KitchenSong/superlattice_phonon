@@ -7,7 +7,9 @@ real(kind=8),allocatable :: pos_sc(:,:)
 real(kind=8),allocatable :: mass_sc(:)
 integer(kind=4),allocatable :: sl_full(:)
 real(kind=8),allocatable :: interfaces_loc(:)
-real(kind=8)   :: cell_sc(3,3)
+real(kind=8)   :: cell_sc(3,3),reci_cell_sc(3,3)
+integer(kind=4),allocatable :: idx_scpc(:) 
+real(kind=8)   :: volume
 
 contains
 
@@ -15,6 +17,7 @@ subroutine gen_struct
 
 use config
 use ifport
+use util
 
 implicit none
 
@@ -30,6 +33,7 @@ CALL SEED (100)
 natm_sc = nx_sc*ny_sc*nz_sc*natm
 allocate(pos_sc(natm_sc,3))
 allocate(mass_sc(natm_sc))
+allocate(idx_scpc(natm_sc))
 
 counts = 1
 allocate(sl_full(4*sum(slz)))
@@ -55,13 +59,13 @@ do i = 1,size(slz,1)
 end do
 
 counts = 1
-write(*,*) nz_sc
 
 do i = 1,nx_sc
     do j = 1,ny_sc
         do k = 1,nz_sc
             do iat = 1,natm
                 pos_sc(counts+iat-1,:) = pos(iat,:) + matmul((/dble(i-1),dble(j-1),dble(k-1)/),cell)
+                idx_scpc(counts+iat-1) = iat
                 ii = nint(pos_sc(counts+iat-1,3)/(az/4.0d0))+1
                 if (sl_full(ii) .eq. 1) then
                     mass_sc(counts+iat-1) =  masss(1) ! Ga
@@ -104,5 +108,9 @@ close(1)
 cell_sc(1,:) = dble(nx_sc)*cell(1,:)
 cell_sc(2,:) = dble(ny_sc)*cell(2,:)
 cell_sc(3,:) = dble(nz_sc)*cell(3,:)
+reci_cell_sc = 2*pi*transpose(inv_real(cell_sc))
+
+! volume of the unit cell 
+volume = dot_product(cell_sc(1,:),cross(cell_sc(2,:),cell_sc(3,:)))
 end subroutine
 end module

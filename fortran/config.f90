@@ -6,7 +6,8 @@ integer(kind=4) :: natm,ntype,ibrav
 real(kind=8)    :: celldm(6)
 real(kind=8),allocatable :: masss(:),pos(:,:)
 real(kind=8) :: cell(3,3),cell_sc_dfpt(3,3)
-integer(kind=4) :: nx,ny,nz
+real(kind=8) :: reci_cell(3,3),ivcell(3,3)
+integer(kind=4) :: nx,ny,nz,nk
 integer(kind=4) :: nx_sc,ny_sc,nz_sc
 real(kind=8),allocatable ::fc(:,:,:,:,:,:,:)
 real(kind=8) :: epsil(3,3)
@@ -24,7 +25,7 @@ real(kind=8),allocatable :: egrid(:)
 integer(kind=4)   :: ipolar
 
 
-namelist /configlist/sigma,filename_input,az,sl,nxy,nmix,emin,emax,ne,ipolar
+namelist /configlist/sigma,filename_input,az,sl,nxy,nmix,emin,emax,ne,ipolar,nk
 contains
     
 subroutine load_configure()
@@ -44,6 +45,7 @@ ne = 10
 emax = 10
 emin = 0
 ipolar = 0 ! default: no long-range force constant
+nk = 10
 
 
 open(1,file="config",status="old")
@@ -86,6 +88,7 @@ do i = 1,natm
 end do
 pos(:,:) = pos(:,:) * celldm(1) * bohr2ang
 cell(:,:) = cell(:,:) * celldm(1) * bohr2ang
+reci_cell= 2*pi*transpose(inv_real(cell))
 read(23,*) label
 allocate(born(natm,3,3))
 if (trim(adjustl(label)) .eq. 'T') then
@@ -121,6 +124,8 @@ do i = 1,3
         end do
     end do
 end do
+
+ivcell = inv_real(cell)
 
 
 

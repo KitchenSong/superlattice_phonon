@@ -6,7 +6,7 @@ all: slph
 slph: $(objects)
 	$(MPIFC) $(FFLAGS) -o $@ $^ $(LDFLAGS) $(LIBS)
 config.o config.mod: util.mod
-view_struct.o view_struct.mod: config.mod
+view_struct.o view_struct.mod: util.mod config.mod
 dyn.o dyn.mod: util.mod config.mod view_struct.mod
 slph.o: util.mod config.mod view_struct.mod
 %.o %.mod: %.f90

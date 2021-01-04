@@ -47,7 +47,7 @@ for i = 1:nx_sc
                    if nmix > 0
                        for iii = 1:length(interfaces_loc)
                            if abs(pos_sc(count+iat-1,3) - interfaces_loc(iii))<5.55/2*nmix
-                               distz = abs(pos_sc(count+iat-1,3) - interfaces_loc(iii))/(5.55/4*(nmix-0.5));
+                               distz = abs(pos_sc(count+iat-1,3) - interfaces_loc(iii))/(5.55/4*(nmix/2-0.5));
                                if rand < 0.8*exp(-distz^2)
                                    mass_sc(count+iat-1) =  26.981539; % Al
                                end
