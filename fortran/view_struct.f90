@@ -1,83 +1,108 @@
 module view_struct
 
+implicit none
+
+integer(kind=4) :: natm_sc
+real(kind=8),allocatable :: pos_sc(:,:)
+real(kind=8),allocatable :: mass_sc(:)
+integer(kind=4),allocatable :: sl_full(:)
+real(kind=8),allocatable :: interfaces_loc(:)
+real(kind=8)   :: cell_sc(3,3)
+
 contains
 
 subroutine gen_struct
 
-implicit none
-      natm_sc = nx_sc*ny_sc*nz_sc*natm;
-pos_sc = zeros(natm_sc,3);
-mass_sc = zeros(natm_sc,1);
-count = 1;
-sl_full = zeros(4*sum(sl),1);
-interfaces_loc = zeros(length(sl)+1,1);
-interfaces_loc(1) = -5.55/4;
-for i = 1:length(sl)
-    for j = 1:sl(i)
-        for k = 1:4
-            if k == 2 || k == 4
-                sl_full(count) = 3; % 3 means As atom
-            else
-                ii = mod(i-1,2)+1;
-                if ii == 1 
-                    sl_full(count) = 1; % 1 means Ga
-                else
-                    sl_full(count) = 2; % 2 means Al
-                end
-            end
-            count = count + 1;
-        end
-    end
-    interfaces_loc(i+1) = 5.55 * (count-2)/4 ;
-end
+use config
+use ifport
 
-count = 1;
-for i = 1:nx_sc
-    for j = 1:ny_sc
-        for k = 1:nz_sc
-            for iat = 1:natm
-                pos_sc(count+iat-1,:) = pos(iat,:) + [i-1,j-1,k-1]*cell;
-%                 if  (iat == 1 || iat == 3)
-%                     if pos_sc(count+iat-1,3)/ 5.5500<1-1.0d-4
-%                         mass_sc(count+iat-1) =  masss(iat); % Ga
-%                     else
-%                         mass_sc(count+iat-1) = 26.981539; % Al
-%                     end
-%                 else
-%                     mass_sc(count+iat-1) = masss(iat);
-%                 end
-               ii = int32(round(pos_sc(count+iat-1,3)/(5.55/4)))+1;
-               if int32(sl_full(ii)) == 1
-                   mass_sc(count+iat-1) =  masss(1); % Ga
-                   if nmix > 0
-                       for iii = 1:length(interfaces_loc)
-                           if abs(pos_sc(count+iat-1,3) - interfaces_loc(iii))<5.55/2*nmix
-                               distz = abs(pos_sc(count+iat-1,3) - interfaces_loc(iii))/(5.55/4*(nmix-0.5));
-                               if rand < 0.8*exp(-distz^2)
-                                   mass_sc(count+iat-1) =  26.981539; % Al
-                               end
-                           end
-                       end
-                   end
-               elseif int32(sl_full(ii)) == 2
-                   mass_sc(count+iat-1) =  26.981539; % Al
-                   if nmix > 0
-                       for iii = 1:length(interfaces_loc)
-                           if abs(pos_sc(count+iat-1,3) - interfaces_loc(iii))<5.55/2*nmix
-                               distz = abs(pos_sc(count+iat-1,3) - interfaces_loc(iii))/(5.55/4*(nmix/2-0.5));
-                               if rand < 0.8*exp(-distz^2)
-                                   mass_sc(count+iat-1) =   masss(1); % Ga
-                               end
-                           end
-                       end
-                   end
+implicit none
+
+integer(kind=4) :: i,j,k,counts,iat,ii,iii
+real(kind=8) :: distz,randval 
+
+
+CALL SEED (100)
+
+
+      
+
+natm_sc = nx_sc*ny_sc*nz_sc*natm
+allocate(pos_sc(natm_sc,3))
+allocate(mass_sc(natm_sc))
+
+counts = 1
+allocate(sl_full(4*sum(slz)))
+allocate(interfaces_loc(size(slz,1)+1))
+interfaces_loc(1) = -az/4.0d0
+do i = 1,size(slz,1)
+    do j = 1,slz(i)
+        do k = 1,natm
+            if ((k .eq. 2) .or. (k .eq. 4)) then
+                sl_full(counts) = 3 ! % 3 means As atom
+            else
+                ii = mod(i-1,2)+1
+                if (ii .eq. 1 ) then
+                    sl_full(counts) = 1 ! 1 means Ga
+                else
+                    sl_full(counts) = 2 ! 2 means Al
+                end if
+            end if
+            counts = counts + 1
+        end do
+    end do
+    interfaces_loc(i+1) = az * dble(counts-2)/4.0d0 
+end do
+
+counts = 1
+write(*,*) nz_sc
+
+do i = 1,nx_sc
+    do j = 1,ny_sc
+        do k = 1,nz_sc
+            do iat = 1,natm
+                pos_sc(counts+iat-1,:) = pos(iat,:) + matmul((/dble(i-1),dble(j-1),dble(k-1)/),cell)
+                ii = nint(pos_sc(counts+iat-1,3)/(az/4.0d0))+1
+                if (sl_full(ii) .eq. 1) then
+                    mass_sc(counts+iat-1) =  masss(1) ! Ga
+                    if (nmix .gt. 0) then
+                        do iii = 1,size(interfaces_loc,1)
+                            if (abs(pos_sc(counts+iat-1,3) - interfaces_loc(iii)).lt.az/2.0d0*dble(nmix)) then
+                                distz = abs(pos_sc(counts+iat-1,3) - interfaces_loc(iii))/(az/4.0d0*dble(nmix/2-0.5))
+                                if (random(0) .lt. 0.8*exp(-distz**2)) then
+                                    mass_sc(counts+iat-1) =  26.981539 ! Al
+                                end if
+                            end if
+                        end do
+                    end if
+               else if (sl_full(ii) .eq. 2) then
+                   mass_sc(counts+iat-1) =  26.981539 ! Al
+                   if (nmix .gt. 0) then
+                       do iii = 1,size(interfaces_loc,1)
+                           if (abs(pos_sc(counts+iat-1,3) - interfaces_loc(iii))<az/2.0d0*dble(nmix)) then
+                               distz = abs(pos_sc(counts+iat-1,3) - interfaces_loc(iii))/(az/4.0d0*dble(nmix/2-0.5))
+                               if (random(0) .lt. 0.8*exp(-distz**2)) then
+                                   mass_sc(counts+iat-1) =  masss(1) ! Ga
+                               end if
+                           end if
+                       end do
+                   end if
                else
-                   mass_sc(count+iat-1) =  masss(2); % As
-               end              
-            end
-            count = count + natm;
-        end
-    end
-end
+                   mass_sc(counts+iat-1) =  masss(2) ! As
+               end if             
+            end do
+            counts = counts + natm
+        end do
+    end do
+end do
+open(unit=1,file="pos_sc.dat",status="UNKNOWN",action="write")
+do i = 1,size(pos_sc,1)
+    WRITE(1,1000) pos_sc(i,:),mass_sc(i)
+end do
+1000 format(4f20.10)
+close(1)
+cell_sc(1,:) = dble(nx_sc)*cell(1,:)
+cell_sc(2,:) = dble(ny_sc)*cell(2,:)
+cell_sc(3,:) = dble(nz_sc)*cell(3,:)
 end subroutine
 end module

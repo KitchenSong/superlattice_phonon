@@ -7,14 +7,24 @@ real(kind=8)    :: celldm(6)
 real(kind=8),allocatable :: masss(:),pos(:,:)
 real(kind=8) :: cell(3,3),cell_sc_dfpt(3,3)
 integer(kind=4) :: nx,ny,nz
+integer(kind=4) :: nx_sc,ny_sc,nz_sc
 real(kind=8),allocatable ::fc(:,:,:,:,:,:,:)
 real(kind=8) :: epsil(3,3)
 real(kind=8),allocatable :: born(:,:,:)
 character(len=30) :: filename_input
 real(kind=8)      :: sigma ! width for delta function in cm-1
 real(kind=8)      :: az ! the period length in z direction
+integer(kind=4),allocatable   :: slz(:)
+integer(kind=4)   :: sl(10000)
+integer(kind=4)   :: nsl
+integer(kind=4)   :: nxy(2)
+integer(kind=4)   :: nmix,ne
+real(kind=8) :: emin,emax
+real(kind=8),allocatable :: egrid(:)
+integer(kind=4)   :: ipolar
 
-namelist /configlist/sigma,filename_input,az
+
+namelist /configlist/sigma,filename_input,az,sl,nxy,nmix,emin,emax,ne,ipolar
 contains
     
 subroutine load_configure()
@@ -27,9 +37,34 @@ integer(kind=4) :: i,j,itemp,jtemp,alpha,beta,iatm,jatm
 integer(kind=4) :: idx,jdx,kdx
 character(len=30) :: label
 real(kind=8)   :: vol,fctemp
+integer(kind=4) :: counts
+
+nmix = 0 ! default: no mixing
+ne = 10
+emax = 10
+emin = 0
+ipolar = 0 ! default: no long-range force constant
+
 
 open(1,file="config",status="old")
 read(1,nml=configlist)
+
+! energy grid for spectral function
+allocate(egrid(ne))
+do i = 1,ne
+    egrid(i) = dble(i-1)/dble(ne-1)*(emax-emin) + emin
+end do
+
+counts = 1
+do while (sl(counts).gt.0)
+    counts = counts + 1
+end do
+allocate(slz(counts-1))
+slz(1:counts) = sl(1:counts)
+nx_sc = nxy(1)
+ny_sc = nxy(2)
+nz_sc = sum(slz)
+
 close(1)
 open(23,file=trim(adjustl(filename_input)),status='old',action='read')
 read(23,*) ntype,natm,ibrav,celldm

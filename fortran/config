@@ -1,5 +1,13 @@
 &configlist
  filename_input="GaAs666.fc"
- sigma = 1.0d0
- az = 5.55d0
+ sigma=1.0d0
+ az=5.55d0
+ sl(1)=8
+ sl(2)=8
+ nxy(1)=1
+ nxy(2)=1
+ nmix = 6
+ ne = 500
+ emin = 0
+ emax = 300
 &end
