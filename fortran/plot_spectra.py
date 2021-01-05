@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 
 
 fig, ax = plt.subplots(figsize=(6,8))
-sc= ax.scatter(k,e,c=s,s=1,edgecolor='none')
+sc= ax.scatter(k,e,c=s,s=1,edgecolor='none',vmax=10)
 plt.colorbar(sc)
 plt.xlim([-np.pi/5.55,np.pi/5.55])
 #from scipy.interpolate import griddata

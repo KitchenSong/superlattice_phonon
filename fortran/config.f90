@@ -23,9 +23,10 @@ integer(kind=4)   :: nmix,ne
 real(kind=8) :: emin,emax
 real(kind=8),allocatable :: egrid(:)
 integer(kind=4)   :: ipolar
+integer(kind=4)   :: randsd
 
 
-namelist /configlist/sigma,filename_input,az,sl,nxy,nmix,emin,emax,ne,ipolar,nk
+namelist/configlist/sigma,filename_input,az,sl,nxy,nmix,emin,emax,ne,ipolar,nk,randsd
 contains
     
 subroutine load_configure()

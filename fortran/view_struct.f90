@@ -25,7 +25,7 @@ integer(kind=4) :: i,j,k,counts,iat,ii,iii
 real(kind=8) :: distz,randval 
 
 
-CALL SEED (100)
+CALL SEED(randsd)
 
 
       
@@ -38,24 +38,24 @@ allocate(idx_scpc(natm_sc))
 counts = 1
 allocate(sl_full(4*sum(slz)))
 allocate(interfaces_loc(size(slz,1)+1))
-interfaces_loc(1) = -az/4.0d0
+interfaces_loc(1) = -az/8.0d0
 do i = 1,size(slz,1)
     do j = 1,slz(i)
         do k = 1,natm
-            if ((k .eq. 2) .or. (k .eq. 4)) then
-                sl_full(counts) = 3 ! % 3 means As atom
-            else
+            !if ((k .eq. 2) .or. (k .eq. 4)) then
+            !    sl_full(counts) = 3 ! % 3 means As atom
+            !else
                 ii = mod(i-1,2)+1
                 if (ii .eq. 1 ) then
-                    sl_full(counts) = 1 ! 1 means Ga
+                    sl_full(counts) = 1 ! 1 means Si
                 else
-                    sl_full(counts) = 2 ! 2 means Al
+                    sl_full(counts) = 2 ! 2 means Ge
                 end if
-            end if
+            !end if
             counts = counts + 1
         end do
     end do
-    interfaces_loc(i+1) = az * dble(counts-2)/4.0d0 
+    interfaces_loc(i+1) = az * dble(counts-2)/4.0d0-az/8.0d0 
 end do
 
 counts = 1
@@ -68,31 +68,32 @@ do i = 1,nx_sc
                 idx_scpc(counts+iat-1) = iat
                 ii = nint(pos_sc(counts+iat-1,3)/(az/4.0d0))+1
                 if (sl_full(ii) .eq. 1) then
-                    mass_sc(counts+iat-1) =  masss(1) ! Ga
+                    mass_sc(counts+iat-1) =  28.0855 ! Si
                     if (nmix .gt. 0) then
                         do iii = 1,size(interfaces_loc,1)
                             if (abs(pos_sc(counts+iat-1,3) - interfaces_loc(iii)).lt.az/2.0d0*dble(nmix)) then
                                 distz = abs(pos_sc(counts+iat-1,3) - interfaces_loc(iii))/(az/4.0d0*dble(nmix/2-0.5))
                                 if (random(0) .lt. 0.8*exp(-distz**2)) then
-                                    mass_sc(counts+iat-1) =  26.981539 ! Al
+                                    mass_sc(counts+iat-1) =   74.921595 ! Ge
                                 end if
                             end if
                         end do
                     end if
                else if (sl_full(ii) .eq. 2) then
-                   mass_sc(counts+iat-1) =  26.981539 ! Al
+                   mass_sc(counts+iat-1) =    74.921595 ! Ge
                    if (nmix .gt. 0) then
                        do iii = 1,size(interfaces_loc,1)
                            if (abs(pos_sc(counts+iat-1,3) - interfaces_loc(iii))<az/2.0d0*dble(nmix)) then
                                distz = abs(pos_sc(counts+iat-1,3) - interfaces_loc(iii))/(az/4.0d0*dble(nmix/2-0.5))
                                if (random(0) .lt. 0.8*exp(-distz**2)) then
-                                   mass_sc(counts+iat-1) =  masss(1) ! Ga
+                                   mass_sc(counts+iat-1) =  28.0855 ! Si
                                end if
                            end if
                        end do
                    end if
                else
-                   mass_sc(counts+iat-1) =  masss(2) ! As
+                   continue
+                   !mass_sc(counts+iat-1) =  masss(2) ! As
                end if             
             end do
             counts = counts + natm
