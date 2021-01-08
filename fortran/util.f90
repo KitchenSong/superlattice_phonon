@@ -10,17 +10,24 @@ real(kind=8),parameter  :: eleVolt = 1.602176634d-19
 complex(kind=8),parameter :: i_imag=cmplx(0,1,kind=8)
 contains
 
-function linspace(k1,k2,nk) result(k)
+function linspace(k1,k2,nk,endpoint) result(k)
 
 real(kind=8) :: k1,k2
 integer(kind=4) :: nk
 integer(kind=4) :: i
 real(kind=8),allocatable :: k(:)
+integer(kind=4) :: endpoint
 
 allocate(k(nk))
-do i = 1,nk
-    k(i) = dble(i-1)/dble(nk-1)*(k2-k1) + k1 
-end do
+if (endpoint .ne. 0) then
+    do i = 1,nk
+        k(i) = dble(i-1)/dble(nk-1)*(k2-k1) + k1 
+    end do
+else
+    do i = 1,nk
+        k(i) = dble(i-1)/dble(nk)*(k2-k1) + k1 
+    end do
+end if
 
 end function
 

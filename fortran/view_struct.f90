@@ -23,6 +23,7 @@ implicit none
 
 integer(kind=4) :: i,j,k,counts,iat,ii,iii
 real(kind=8) :: distz,randval 
+integer(kind=4) :: nmix
 
 
 CALL SEED(randsd)
@@ -69,28 +70,32 @@ do i = 1,nx_sc
                 ii = nint(pos_sc(counts+iat-1,3)/(az/4.0d0))+1
                 if (sl_full(ii) .eq. 1) then
                     mass_sc(counts+iat-1) =  28.0855 ! Si
-                    if (nmix .gt. 0) then
-                        do iii = 1,size(interfaces_loc,1)
-                            if (abs(pos_sc(counts+iat-1,3) - interfaces_loc(iii)).lt.az/2.0d0*dble(nmix)) then
+                    do iii = 1,size(interfaces_loc,1)
+                       if (nmixlist(iii) .gt. 0) then
+                           nmix = nmixlist(iii)
+                           if (abs(pos_sc(counts+iat-1,3) - interfaces_loc(iii)).lt.az/2.0d0*dble(nmix)) then
                                 distz = abs(pos_sc(counts+iat-1,3) - interfaces_loc(iii))/(az/4.0d0*dble(nmix/2-0.5))
                                 if (random(0) .lt. 0.8*exp(-distz**2)) then
                                     mass_sc(counts+iat-1) =   74.921595 ! Ge
                                 end if
                             end if
-                        end do
-                    end if
+                        end if
+                    end do
                else if (sl_full(ii) .eq. 2) then
                    mass_sc(counts+iat-1) =    74.921595 ! Ge
-                   if (nmix .gt. 0) then
-                       do iii = 1,size(interfaces_loc,1)
+                    do iii = 1,size(interfaces_loc,1)
+                       if (nmixlist(iii) .gt. 0) then
+                           nmix = nmixlist(iii)
+
                            if (abs(pos_sc(counts+iat-1,3) - interfaces_loc(iii))<az/2.0d0*dble(nmix)) then
                                distz = abs(pos_sc(counts+iat-1,3) - interfaces_loc(iii))/(az/4.0d0*dble(nmix/2-0.5))
                                if (random(0) .lt. 0.8*exp(-distz**2)) then
                                    mass_sc(counts+iat-1) =  28.0855 ! Si
                                end if
                            end if
-                       end do
-                   end if
+                    
+                       end if
+                    end do
                else
                    continue
                    !mass_sc(counts+iat-1) =  masss(2) ! As

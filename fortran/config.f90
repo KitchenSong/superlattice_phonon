@@ -16,17 +16,19 @@ character(len=30) :: filename_input
 real(kind=8)      :: sigma ! width for delta function in cm-1
 real(kind=8)      :: az ! the period length in z direction
 integer(kind=4),allocatable   :: slz(:)
+integer(kind=4),allocatable   :: nmixlist(:)
 integer(kind=4)   :: sl(10000)
+integer(kind=4)   :: mix(10000) 
 integer(kind=4)   :: nsl
 integer(kind=4)   :: nxy(2)
-integer(kind=4)   :: nmix,ne
+integer(kind=4)   :: ne
 real(kind=8) :: emin,emax
 real(kind=8),allocatable :: egrid(:)
 integer(kind=4)   :: ipolar
-integer(kind=4)   :: randsd
+integer(kind=4)   :: randsd,verbose
 
 
-namelist/configlist/sigma,filename_input,az,sl,nxy,nmix,emin,emax,ne,ipolar,nk,randsd
+namelist/configlist/sigma,filename_input,az,sl,nxy,mix,emin,emax,ne,ipolar,nk,randsd,verbose
 contains
     
 subroutine load_configure()
@@ -41,12 +43,12 @@ character(len=30) :: label
 real(kind=8)   :: vol,fctemp
 integer(kind=4) :: counts
 
-nmix = 0 ! default: no mixing
 ne = 10
 emax = 10
 emin = 0
 ipolar = 0 ! default: no long-range force constant
 nk = 10
+verbose = 0
 
 
 open(1,file="config",status="old")
@@ -63,7 +65,9 @@ do while (sl(counts).gt.0)
     counts = counts + 1
 end do
 allocate(slz(counts-1))
-slz(1:counts) = sl(1:counts)
+allocate(nmixlist(counts-1))
+slz(1:counts-1) = sl(1:counts-1)
+nmixlist(1:counts-1) = mix(1:counts-1)
 nx_sc = nxy(1)
 ny_sc = nxy(2)
 nz_sc = sum(slz)

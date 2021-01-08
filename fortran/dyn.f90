@@ -35,6 +35,7 @@ real(kind=8),allocatable  :: Ggrid(:,:,:,:),weightk(:,:,:)
 real(kind=8),allocatable :: spectral(:,:,:,:,:)
 real(kind=8),allocatable :: kmeshx(:,:,:,:,:),kmeshy(:,:,:,:,:),kmeshz(:,:,:,:,:)
 real(kind=8),allocatable :: emesh(:,:,:,:,:)
+real(kind=8),allocatable :: datamesh(:,:)
 integer(kind=4) :: ib
 
 kpoint1 = (/0.0,0.0,0.0/)
@@ -50,16 +51,16 @@ allocate(kabs(nk))
 kps = 0.0d0
 kabs = 0.0d0
 do i = 1,3
-    kps(1:(nk-1)/2+1,i) = linspace(kpoint2(i),kpoint1(i),(nk-1)/2+1)    
+    kps(1:(nk)/2+1,i) = linspace(kpoint2(i),kpoint1(i),(nk)/2+1,1)    
 end do
-do i = 1,(nk-1)/2+1
+do i = 1,(nk)/2+1
     kabs(i) = sqrt(dot_product(kps(i,:)-kpoint2,kps(i,:)-kpoint2))
 end do
 do i = 1,3
-    kps((nk-1)/2+1:nk,i) = linspace(kpoint1(i),kpoint3(i),(nk-1)/2+1)    
+    kps((nk)/2+1:nk,i) = linspace(kpoint1(i),kpoint3(i),(nk)/2,0)    
 end do
-do i = 1,(nk-1)/2+1
-   kabs(i+(nk-1)/2) = kabs((nk-1)/2+1)+sqrt(dot_product(kps(i+(nk-1)/2,:)-kpoint1,kps(i+(nk-1)/2,:)-kpoint1))
+do i = 1,(nk)/2
+   kabs(i+(nk)/2) = kabs((nk)/2+1)+sqrt(dot_product(kps(i+(nk)/2,:)-kpoint1,kps(i+(nk)/2,:)-kpoint1))
 end do
 
 allocate(dynmat(nk,natm_sc*3,natm_sc*3))
@@ -281,18 +282,22 @@ do ik = 1,nk
 end do
 2000 format(1f10.5)
 close(4)
-! write the spectral function
-open(unit=1,file="spectral.dat",status="UNKNOWN",action="write",form="unformatted")
-open(unit=2,file="emesh.dat",status="UNKNOWN",action="write",form="unformatted")
-open(unit=3,file="kmeshz.dat",status="UNKNOWN",action="write",form="unformatted")
 
+
+allocate(datamesh((nk)*nz_sc+1,ne))
+datamesh = 0.0d0
 !! formatted
-!do ik = 1,nk
+do ik = 1,nk
 !    do ib = 1,natm_sc*3
-!        do ii = 1,2*nx_sc+1
-!            do jj = 1,2*ny_sc+1
-!                do kk = 1,2*nz_sc+1
+        do ii = 1,2*nx_sc+1
+            do jj = 1,2*ny_sc+1
+                do kk = 1,2*nz_sc+1
+                    if ((kmeshz(ii,jj,kk,ik,1).ge. (-1.0*pi/az)) .and.(kmeshz(ii,jj,kk,ik,1).le. (1.0*pi/az))) then 
+!                        write(*,*)(kmeshz(ii,jj,kk,ik,1)+1.0*pi/az)/(2*pi/az/nz_sc/(nk-1))-nint((kmeshz(ii,jj,kk,ik,1)+1.0*pi/az)/(2*pi/az/nz_sc/(nk-1)))
 !                    do ie=1,size(egrid,1)
+                         datamesh(nint((kmeshz(ii,jj,kk,ik,1)+1.0*pi/az)/(2*pi/az/nz_sc/(nk)))+1,:) = datamesh(nint((kmeshz(ii,jj,kk,ik,1)+1.0*pi/az)/(2*pi/az/nz_sc/(nk)))+1,:) +&
+                         spectral(ii,jj,kk,ik,:)
+                        
 !                        WRITE(1,2000,advance='no') spectral(ii,jj,kk,ik,ie)
 !                        WRITE(2,2000,advance='no') emesh(ii,jj,kk,ik,ie)
 !                        WRITE(3,2000,advance='no') kmeshz(ii,jj,kk,ik,ie)
@@ -300,21 +305,31 @@ open(unit=3,file="kmeshz.dat",status="UNKNOWN",action="write",form="unformatted"
 !                     WRITE(1,"(A)",advance="yes") " "
 !                     WRITE(2,"(A)",advance="yes") " "
 !                     WRITE(3,"(A)",advance="yes") " "
-!                end do
-!            end do
-!        end do
+                     end if
+                end do
+            end do
+        end do
 !    end do
 !    write(*,*) dble(ik)/dble(nk)
-!end do
+end do
 !2000 format(1f10.5)
-write(1) spectral
-write(2) emesh
-write(3) kmeshz
+if (verbose .ne. 0) then
+    ! write the spectral function
+    open(unit=1,file="spectral.dat",status="UNKNOWN",action="write",form="unformatted")
+    open(unit=2,file="emesh.dat",status="UNKNOWN",action="write",form="unformatted")
+    open(unit=3,file="kmeshz.dat",status="UNKNOWN",action="write",form="unformatted")
+    write(1) spectral
+    write(2) emesh
+    write(3) kmeshz
+    close(1)
+    close(2)
+    close(3)
+end if
 
+open(unit=1,file="datamesh.dat",status="UNKNOWN",action="write",form="unformatted")
+
+write(1) datamesh
 close(1)
-close(2)
-close(3)
-
 
 
 
