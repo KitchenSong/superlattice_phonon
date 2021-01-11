@@ -10,6 +10,8 @@ real(kind=8),allocatable :: interfaces_loc(:)
 real(kind=8)   :: cell_sc(3,3),reci_cell_sc(3,3)
 integer(kind=4),allocatable :: idx_scpc(:) 
 real(kind=8)   :: volume
+integer(kind=4),allocatable :: layerlist(:,:),layern(:)
+integer(kind=4) :: nlay
 
 contains
 
@@ -21,17 +23,19 @@ use util
 
 implicit none
 
-integer(kind=4) :: i,j,k,counts,iat,ii,iii
+integer(kind=4) :: i,j,k,counts,iat,ii,iii,ilay
 real(kind=8) :: distz,randval 
 integer(kind=4) :: nmix
 
 
 CALL SEED(randsd)
 
-
-      
-
 natm_sc = nx_sc*ny_sc*nz_sc*natm
+nlay = natm*nz_sc
+allocate(layerlist(nlay,nx_sc*ny_sc))
+allocate(layern(nlay))
+layerlist = 0
+layern = 0
 allocate(pos_sc(natm_sc,3))
 allocate(mass_sc(natm_sc))
 allocate(idx_scpc(natm_sc))
@@ -99,7 +103,10 @@ do i = 1,nx_sc
                else
                    continue
                    !mass_sc(counts+iat-1) =  masss(2) ! As
-               end if             
+               end if
+               ilay = nint(pos_sc(counts+iat-1,3)/(az/dble(natm)))+1
+               layern(ilay) = layern(ilay) + 1
+               layerlist(ilay,layern(ilay)) = counts+iat-1
             end do
             counts = counts + natm
         end do

@@ -29,13 +29,15 @@ real(kind=8)    :: g(1,3),g_old(3),zig(1,3),zjg(1,3),auxi(3),gr,gtemp(1,3)
 real(kind=8)    :: pos_i(3),pos_j(3),pos_i_pc(3),pos_j_pc(3),total_weight,weight
 real(kind=8)    :: dr(3),ixyz(3),df
 integer(kind=4) :: ipol,jpol,iat,jat,iidim,jdim,ik,nreq
-integer(kind=4) :: aa,bb,cc,t1,t2,t3,m,n
+integer(kind=4) :: aa,bb,cc,t1,t2,t3,m,n,nn,ll,ikz
 real(kind=8)    :: kpoint(3),ktemp(3),mi,mj
 real(kind=8),allocatable  :: Ggrid(:,:,:,:),weightk(:,:,:)
 real(kind=8),allocatable :: spectral(:,:,:,:,:)
+real(kind=8),allocatable :: spectral_proj(:,:,:,:,:,:,:)
 real(kind=8),allocatable :: kmeshx(:,:,:,:,:),kmeshy(:,:,:,:,:),kmeshz(:,:,:,:,:)
 real(kind=8),allocatable :: emesh(:,:,:,:,:)
 real(kind=8),allocatable :: datamesh(:,:)
+real(kind=8),allocatable :: datamesh_proj(:,:,:,:)
 integer(kind=4) :: ib
 
 kpoint1 = (/0.0,0.0,0.0/)
@@ -242,11 +244,14 @@ do i = 1,2*nx_sc+1
 end do
 allocate(weightk(2*nx_sc+1,2*ny_sc+1,2*nz_sc+1))
 allocate(spectral(2*nx_sc+1,2*ny_sc+1,2*nz_sc+1,nk,ne))
+allocate(spectral_proj(3,nlay,2*nx_sc+1,2*ny_sc+1,2*nz_sc+1,nk,ne))
 allocate(kmeshx(2*nx_sc+1,2*ny_sc+1,2*nz_sc+1,nk,ne))
 allocate(kmeshy(2*nx_sc+1,2*ny_sc+1,2*nz_sc+1,nk,ne))
 allocate(kmeshz(2*nx_sc+1,2*ny_sc+1,2*nz_sc+1,nk,ne))
 allocate(emesh(2*nx_sc+1,2*ny_sc+1,2*nz_sc+1,nk,ne))
 allocate(matmat(3*natm_sc,3*natm_sc))
+spectral = 0.0d0
+spectral_proj = 0.0d0
 
 open(unit=4,file="eigen.dat",status="UNKNOWN",action="write")
 
@@ -272,6 +277,16 @@ do ik = 1,nk
                     weightk(ii,jj,kk) = weight_k(matmul(kps(ik,:),reci_cell_sc),Ggrid(ii,jj,kk,:),evs(:,ib))
                     spectral(ii,jj,kk,ik,:) = spectral(ii,jj,kk,ik,:)+ weightk(ii,jj,kk)*exp(-0.5*(omega(ik,ib)-egrid(:))**2/sigma**2)&
                         /sigma/sqrt(2*pi)
+                    do nn= 1,nlay 
+                        do ll = 1,layern(nn)
+                            do alpha = 1,3
+                                spectral_proj(alpha,nn,ii,jj,kk,ik,:) =spectral_proj(alpha,nn,ii,jj,kk,ik,:)&
+                +abs(evs((layerlist(nn,ll)-1)*3+alpha,ib)/sqrt(mass_sc(layerlist(nn,ll))))**2&
+                 *weightk(ii,jj,kk)*exp(-0.5*(omega(ik,ib)-egrid(:))**2/sigma**2)&
+                /sigma/sqrt(2*pi)
+                            end do
+                        end do
+                    end do 
                 end do
             end do
         end do
@@ -285,18 +300,27 @@ close(4)
 
 
 allocate(datamesh((nk)*nz_sc+1,ne))
+allocate(datamesh_proj(3,nlay,(nk)*nz_sc+1,ne))
 datamesh = 0.0d0
+datamesh_proj = 0.0d0
 !! formatted
 do ik = 1,nk
 !    do ib = 1,natm_sc*3
         do ii = 1,2*nx_sc+1
             do jj = 1,2*ny_sc+1
                 do kk = 1,2*nz_sc+1
-                    if ((kmeshz(ii,jj,kk,ik,1).ge. (-1.0*pi/az)) .and.(kmeshz(ii,jj,kk,ik,1).le. (1.0*pi/az))) then 
+                    if ((kmeshz(ii,jj,kk,ik,1).ge. (-1.0*pi/az)) .and.(kmeshz(ii,jj,kk,ik,1).le. (1.0*pi/az)).and.(abs(kmeshx(ii,jj,kk,ik,1)).lt.1.0d-4).and.(abs(kmeshy(ii,jj,kk,ik,1)).lt.1.0d-4)) then 
 !                        write(*,*)(kmeshz(ii,jj,kk,ik,1)+1.0*pi/az)/(2*pi/az/nz_sc/(nk-1))-nint((kmeshz(ii,jj,kk,ik,1)+1.0*pi/az)/(2*pi/az/nz_sc/(nk-1)))
 !                    do ie=1,size(egrid,1)
-                         datamesh(nint((kmeshz(ii,jj,kk,ik,1)+1.0*pi/az)/(2*pi/az/nz_sc/(nk)))+1,:) = datamesh(nint((kmeshz(ii,jj,kk,ik,1)+1.0*pi/az)/(2*pi/az/nz_sc/(nk)))+1,:) +&
+                         ikz = nint((kmeshz(ii,jj,kk,ik,1)+1.0*pi/az)/(2*pi/az/nz_sc/(nk)))+1
+                         datamesh(ikz,:) = datamesh(ikz,:) +&
                          spectral(ii,jj,kk,ik,:)
+                         do nn= 1,nlay 
+                             do alpha=1,3
+                                 datamesh_proj(alpha,nn,ikz,:) = datamesh_proj(alpha,nn,ikz,:) +&
+                                 spectral_proj(alpha,nn,ii,jj,kk,ik,:)
+                             end do                         
+                         end do
                         
 !                        WRITE(1,2000,advance='no') spectral(ii,jj,kk,ik,ie)
 !                        WRITE(2,2000,advance='no') emesh(ii,jj,kk,ik,ie)
@@ -327,9 +351,13 @@ if (verbose .ne. 0) then
 end if
 
 open(unit=1,file="datamesh.dat",status="UNKNOWN",action="write",form="unformatted")
-
 write(1) datamesh
 close(1)
+open(unit=1,file="datamesh_proj.dat",status="UNKNOWN",action="write",form="unformatted")
+write(1) datamesh_proj
+close(1)
+
+
 
 
 
