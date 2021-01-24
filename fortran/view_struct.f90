@@ -6,6 +6,7 @@ integer(kind=4) :: natm_sc
 real(kind=8),allocatable :: pos_sc(:,:)
 real(kind=8),allocatable :: mass_sc(:)
 integer(kind=4),allocatable :: sl_full(:)
+integer(kind=4),allocatable :: sl_full_swap(:)
 real(kind=8),allocatable :: interfaces_loc(:)
 real(kind=8)   :: cell_sc(3,3),reci_cell_sc(3,3)
 integer(kind=4),allocatable :: idx_scpc(:) 
@@ -42,6 +43,7 @@ allocate(idx_scpc(natm_sc))
 
 counts = 1
 allocate(sl_full(4*sum(slz)))
+allocate(sl_full_swap(4*sum(slz)))
 allocate(interfaces_loc(size(slz,1)+1))
 interfaces_loc(1) = -az/8.0d0
 do i = 1,size(slz,1)
@@ -52,15 +54,17 @@ do i = 1,size(slz,1)
             !else
                 ii = mod(i-1,2)+1
                 if (ii .eq. 1 ) then
-                    sl_full(counts) = 1 ! 1 means Si
+                    sl_full(counts) = prda(k) ! 1 means Si
+                    sl_full_swap(counts) = prdb(k) ! 1 means Si
                 else
-                    sl_full(counts) = 2 ! 2 means Ge
+                    sl_full(counts) = prdb(k) ! 2 means Ge
+                    sl_full_swap(counts) = prda(k) ! 2 means Ge
                 end if
             !end if
             counts = counts + 1
         end do
     end do
-    interfaces_loc(i+1) = az * dble(counts-2)/4.0d0-az/8.0d0 
+    interfaces_loc(i+1) = az * dble(counts-1)/4.0d0-az/8.0d0 
 end do
 
 counts = 1
@@ -72,38 +76,25 @@ do i = 1,nx_sc
                 pos_sc(counts+iat-1,:) = pos(iat,:) + matmul((/dble(i-1),dble(j-1),dble(k-1)/),cell)
                 idx_scpc(counts+iat-1) = iat
                 ii = nint(pos_sc(counts+iat-1,3)/(az/4.0d0))+1
-                if (sl_full(ii) .eq. 1) then
-                    mass_sc(counts+iat-1) =  28.0855 ! Si
+                    mass_sc(counts+iat-1) =  mass_type(sl_full(ii)) ! Si
                     do iii = 1,size(interfaces_loc,1)
                        if (nmixlist(iii) .gt. 0) then
                            nmix = nmixlist(iii)
                            if (abs(pos_sc(counts+iat-1,3) - interfaces_loc(iii)).lt.az/2.0d0*dble(nmix)) then
                                 distz = abs(pos_sc(counts+iat-1,3) - interfaces_loc(iii))/(az/4.0d0*dble(nmix/2-0.5))
                                 if (random(0) .lt. 0.8*exp(-distz**2)) then
-                                    mass_sc(counts+iat-1) =   74.921595 ! Ge
+                                    mass_sc(counts+iat-1) = &
+                                    mass_type(sl_full_swap(ii)) ! Ge
+                                end if
+                                if (random(0) .lt. 0.8*exp(-distz**2)) then
+                                    if (defecta(iat).gt.0) then
+                                        mass_sc(counts+iat-1) = &
+                                        mass_d(defecta(iat)) ! Ge
+                                    end if
                                 end if
                             end if
                         end if
-                    end do
-               else if (sl_full(ii) .eq. 2) then
-                   mass_sc(counts+iat-1) =    74.921595 ! Ge
-                    do iii = 1,size(interfaces_loc,1)
-                       if (nmixlist(iii) .gt. 0) then
-                           nmix = nmixlist(iii)
-
-                           if (abs(pos_sc(counts+iat-1,3) - interfaces_loc(iii))<az/2.0d0*dble(nmix)) then
-                               distz = abs(pos_sc(counts+iat-1,3) - interfaces_loc(iii))/(az/4.0d0*dble(nmix/2-0.5))
-                               if (random(0) .lt. 0.8*exp(-distz**2)) then
-                                   mass_sc(counts+iat-1) =  28.0855 ! Si
-                               end if
-                           end if
-                    
-                       end if
-                    end do
-               else
-                   continue
-                   !mass_sc(counts+iat-1) =  masss(2) ! As
-               end if
+                    end do 
                ilay = nint(pos_sc(counts+iat-1,3)/(az/dble(natm)))+1
                layern(ilay) = layern(ilay) + 1
                layerlist(ilay,layern(ilay)) = counts+iat-1

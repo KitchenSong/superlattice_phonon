@@ -293,9 +293,10 @@ do ik = 1,nk
         write(4,2000,advance="no") omega(ik,ib)
     end do
     WRITE(4,"(A)",advance="yes") " "
-    write(*,*) dble(ik)/dble(nk)
+    write(*,140) dble(ik)/dble(nk)*100.0d0,'%'
 end do
 2000 format(1f10.5)
+140 format(F8.2,A)
 close(4)
 
 

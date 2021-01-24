@@ -1,0 +1,30 @@
+&configlist
+ !filename_input="GaAs666.fc"
+ nspecies=2
+ mass_species(1:2)=28.0855,74.921595
+ mass_defect(1)=167.259
+ perioda(1:4)=1,1,1,1
+ periodb(1:4)=2,2,2,2
+ defecta(1:4)=1,0,1,0
+ defectb(1:4)=1,0,1,0
+ filename_input="Si444.fc"
+ sigma=1.5d0
+ !az=5.55d0
+ az=5.46616391448
+ !sl(1:8)=4,2,6,3,2,3,1,5
+ sl(1:2) = 4,4
+ nxy(1)=1
+ nxy(2)=1
+ !mix(1:8)=0,0,0,0,0,0,0,0
+ mix(1:2) = 6,6
+ ne = 150
+ emin = 0
+ emax = 520
+ nk = 20
+ randsd =8
+ verbose=0
+ dos=1
+ ndosx=5
+ ndosy=5
+ ndosz=5
+&end

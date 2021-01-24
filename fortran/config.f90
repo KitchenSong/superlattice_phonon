@@ -26,9 +26,19 @@ real(kind=8) :: emin,emax
 real(kind=8),allocatable :: egrid(:)
 integer(kind=4)   :: ipolar
 integer(kind=4)   :: randsd,verbose
+integer(kind=4)   :: dos,ndosx,ndosy,ndosz
+real(kind=8),allocatable  :: kmesh 
+real(kind=8)     :: mass_species(100)
+integer(kind=4)  :: nspecies
+real(kind=8),allocatable  :: mass_type(:)
+real(kind=8)     :: mass_defect(100)
+real(kind=8),allocatable  :: mass_d(:)
+integer(kind=4)  :: perioda(100),periodb(100),defecta(100),defectb(100)
+integer(kind=4),allocatable  :: prda(:),prdb(:)
 
 
-namelist/configlist/sigma,filename_input,az,sl,nxy,mix,emin,emax,ne,ipolar,nk,randsd,verbose
+
+namelist/configlist/sigma,filename_input,az,sl,nxy,mix,emin,emax,ne,ipolar,nk,randsd,verbose,dos,ndosx,ndosy,ndosz,mass_species,nspecies,perioda,periodb,defecta,defectb,mass_defect
 contains
     
 subroutine load_configure()
@@ -49,10 +59,48 @@ emin = 0
 ipolar = 0 ! default: no long-range force constant
 nk = 10
 verbose = 0
-
+dos = 0
+ndosx = 1
+ndosy = 1
+ndosz = 1
+nspecies = 1
+mass_species = 0.0d0
+perioda=0
+periodb=0
+defecta=0
+defectb=0
+mass_defect=0
 
 open(1,file="config",status="old")
 read(1,nml=configlist)
+counts = 1
+do while (mass_species(counts).gt.0)
+    counts = counts + 1
+end do
+allocate(mass_type(counts-1))
+if (counts-1 .ne. nspecies) then
+    write(*,*) 'nspecies incorrect!'
+    stop
+end if
+mass_type(1:counts-1) = mass_species(1:counts-1)
+counts = 1
+do while (perioda(counts).gt.0)
+    counts = counts + 1
+end do
+allocate(prda(counts-1))
+prda(1:counts-1)=perioda(1:counts-1)
+counts = 1
+do while (periodb(counts).gt.0)
+    counts = counts + 1
+end do
+allocate(prdb(counts-1))
+prdb(1:counts-1)=periodb(1:counts-1)
+counts = 1
+do while (mass_defect(counts).gt.0)
+    counts = counts + 1
+end do
+allocate(mass_d(counts-1))
+mass_d(1:counts-1)=mass_defect(1:counts-1)
 
 ! energy grid for spectral function
 allocate(egrid(ne))
