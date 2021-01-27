@@ -35,10 +35,11 @@ real(kind=8)     :: mass_defect(100)
 real(kind=8),allocatable  :: mass_d(:)
 integer(kind=4)  :: perioda(100),periodb(100),defecta(100),defectb(100)
 integer(kind=4),allocatable  :: prda(:),prdb(:)
+integer(kind=4)  :: mass_read
 
 
 
-namelist/configlist/sigma,filename_input,az,sl,nxy,mix,emin,emax,ne,ipolar,nk,randsd,verbose,dos,ndosx,ndosy,ndosz,mass_species,nspecies,perioda,periodb,defecta,defectb,mass_defect
+namelist/configlist/sigma,filename_input,az,sl,nxy,mix,emin,emax,ne,ipolar,nk,randsd,verbose,dos,ndosx,ndosy,ndosz,mass_species,nspecies,perioda,periodb,defecta,defectb,mass_defect,mass_read
 contains
     
 subroutine load_configure()
@@ -70,6 +71,7 @@ periodb=0
 defecta=0
 defectb=0
 mass_defect=0
+mass_read=0
 
 open(1,file="config",status="old")
 read(1,nml=configlist)

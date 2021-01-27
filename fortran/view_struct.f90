@@ -68,6 +68,7 @@ do i = 1,size(slz,1)
 end do
 
 counts = 1
+open(23,file='mass_profile.dat',status='old',action='read')
 
 do i = 1,nx_sc
     do j = 1,ny_sc
@@ -76,6 +77,7 @@ do i = 1,nx_sc
                 pos_sc(counts+iat-1,:) = pos(iat,:) + matmul((/dble(i-1),dble(j-1),dble(k-1)/),cell)
                 idx_scpc(counts+iat-1) = iat
                 ii = nint(pos_sc(counts+iat-1,3)/(az/4.0d0))+1
+                if ( mass_read.eq.0 ) then
                     mass_sc(counts+iat-1) =  mass_type(sl_full(ii)) ! Si
                     do iii = 1,size(interfaces_loc,1)
                        if (nmixlist(iii) .gt. 0) then
@@ -95,6 +97,9 @@ do i = 1,nx_sc
                             end if
                         end if
                     end do 
+               else
+                   read(23,*) mass_sc(counts+iat-1)
+               end if
                ilay = nint(pos_sc(counts+iat-1,3)/(az/dble(natm)))+1
                layern(ilay) = layern(ilay) + 1
                layerlist(ilay,layern(ilay)) = counts+iat-1
@@ -103,6 +108,7 @@ do i = 1,nx_sc
         end do
     end do
 end do
+close(23)
 open(unit=1,file="pos_sc.dat",status="UNKNOWN",action="write")
 do i = 1,size(pos_sc,1)
     WRITE(1,1000) pos_sc(i,:),mass_sc(i)

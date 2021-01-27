@@ -15,7 +15,7 @@ nz_sc = ((len(s))//ne -1)//nk
 print(nz_sc)
 # in fortran, the array is a x b but in python, it is b x a
 s = s.reshape(((ne,nk*nz_sc+1)))
-sc = ax.imshow(s,aspect='auto',origin='lower',interpolation='bilinear',extent=(0,1,0,emax))
+sc = ax.imshow(s,aspect='auto',origin='lower',interpolation='bilinear',extent=(0,1,0,emax),vmax=6)
 plt.colorbar(sc)
 plt.savefig('test.png',dpi=300)
 plt.show()
